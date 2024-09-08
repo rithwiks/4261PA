@@ -9,20 +9,6 @@ import SwiftUI
 import RealmSwift
 
 
-public class LeaderBoardItem: Object {
-    @Persisted(primaryKey: true) var _id: ObjectId
-    @Persisted var score: Int = 0
-    @Persisted var ownerId: String
-    @Persisted var username: String
-    convenience init(ownerId: String, score: Int, username: String) {
-        self.init()
-        self.score = score
-        self.ownerId = ownerId
-        self.username = username
-   }
-}
-
-
 struct ContentView: View {
     
     @State var alertIsVisible = false
