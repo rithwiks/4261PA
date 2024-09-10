@@ -175,7 +175,37 @@ struct ContentView: View {
             switch result {
             case .success(let user):
                 print("Successfully logged in as user: \(user)")
-                self.scoreToBeat = 0
+                let client = user.mongoClient("mongodb-atlas")
+                let database = client.database(named: "my_database")
+                let collection = database.collection(withName: "users")
+                
+                user.refreshCustomData { (result) in
+                    switch result {
+                    case .failure(let error):
+                        print("Failed to refresh custom data: \(error.localizedDescription)")
+                    case .success(let customData):
+                        // favoriteColor was set on the custom data.
+                        print("Best Score: \(customData["bestScore"] ?? 0)")
+                        if (customData["bestScore"] != nil) {
+                            self.scoreToBeat = customData["bestScore"] as! Int
+                        } else {
+                            collection.insertOne([
+                                "_id": AnyBSON(ObjectId()),
+                                "userId": AnyBSON(user.id),
+                                "bestScore": AnyBSON(0)
+                                ]) { (result) in
+                                switch result {
+                                case .failure(let error):
+                                    print("Failed to insert document: \(error.localizedDescription)")
+                                case .success(let newObjectId):
+                                    print("Inserted custom user data document with object ID: \(newObjectId)")
+                                }
+                            }
+                            self.scoreToBeat = 0
+                        }
+                        return
+                    }
+                }
                 self.score = 0
                 self.currRound = 1
                 self.target = Int.random(in:1...100)
@@ -188,7 +218,22 @@ struct ContentView: View {
     }
     private func logOut() {
         guard let user = app.currentUser else { return }
-        
+        let client = user.mongoClient("mongodb-atlas")
+        let database = client.database(named: "my_database")
+        let collection = database.collection(withName: "users")
+        collection.updateOneDocument(
+            filter: ["userId": AnyBSON.string("66ddce235f33c141ef42f91a")],
+            update: ["$set": ["bestScore": AnyBSON(self.scoreToBeat)]]
+        ) { (result) in
+            switch result {
+            case .failure(let error):
+                print("Failed to update: \(error.localizedDescription)")
+                return
+            case .success(let updateResult):
+                // User document updated.
+                print("Matched: \(updateResult.matchedCount), updated: \(updateResult.modifiedCount)")
+            }
+        }
         user.logOut { error in
             if let error = error {
                 print("Failed to log out: \(error.localizedDescription)")
