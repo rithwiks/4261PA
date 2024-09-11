@@ -123,7 +123,7 @@ struct ContentView: View {
                                         .textFieldStyle(RoundedBorderTextFieldStyle())
                                         .padding()
                                     
-                SecureField("Password", text: $password)
+                SecureField("Password (must be atleast 6 characters)", text: $password)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
                     .padding()
                 
@@ -246,9 +246,9 @@ struct ContentView: View {
     func pointsForGuess() -> Int {
         let diff = 100 - abs(Int(self.sliderValue.rounded()) - self.target)
         if diff == 100 {
-            return 200
-        } else if diff == 99 {
-            return 149
+            return 500
+        } else if diff >= 97 {
+            return 2 * diff
         } else {
             return diff
         }
